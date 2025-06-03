@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Italia Feriehefte - Oversiktskart</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      html,
+      body,
+      #map {
+        height: 100%;
+        margin: 0;
+      }
+      .legend {
+        background: white;
+        padding: 8px;
+        font-size: 14px;
+        line-height: 1.4em;
+        color: #333;
+      }
+      .legend div {
+        margin-bottom: 4px;
+      }
+      .legend span {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      .leaflet-popup-content button {
+        margin-top: 5px;
+        padding: 4px 8px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      const standard = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 19,
+          attribution: "© OpenStreetMap contributors",
+        }
+      );
+
+      const satellite = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+          attribution: "Tiles © Esri",
+        }
+      );
+
+      const labels = L.tileLayer(
+        "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+          attribution: "Labels © Esri",
+        }
+      );
+
+      const satelliteWithLabels = L.layerGroup([satellite, labels]);
+
+      const map = L.map("map", {
+        center: [43.78, 10.86],
+        zoom: 9,
+        layers: [satelliteWithLabels],
+      });
+
+      const baseMaps = {
+        Standardkart: standard,
+        "Satellitt med stedsnavn": satelliteWithLabels,
+      };
+
+      L.control.layers(baseMaps).addTo(map);
+
+      const categoryColors = {
+        restaurant: "red",
+        sight: "blue",
+        stay: "violet",
+        activity: "orange",
+        city: "gold",
+        golf: "green",
+      };
+
+      function createIcon(color) {
+        return L.icon({
+          iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
+          shadowUrl:
+            "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41],
+        });
+      }
+
+      const icons = {};
+      const visitedIcons = {};
+      for (const [cat, color] of Object.entries(categoryColors)) {
+        icons[cat] = createIcon(color);
+        visitedIcons[cat] = createIcon("grey");
+      }
+
+      const locations = [
+        {
+          name: "Hjemme",
+          coords: [43.8343, 10.9043],
+          category: "stay",
+          description: "Verdens beste plass",
+          link: "https://www.booking.com/hotel/it/holiday-home-dependance.en-gb.html",
+        },
+        {
+          name: "La Giostra",
+          coords: [43.7698, 11.2657],
+          category: "restaurant",
+          description:
+            "Romantisk restaurant med historisk atmosfære og klassiske toskanske retter.",
+          link: "http://www.ristorantelagiostra.com/",
+        },
+        {
+          name: "Trattoria ZaZa",
+          coords: [43.776, 11.2543],
+          category: "restaurant",
+          description: "Tradisjonell toskansk trattoria med levende atmosfære.",
+          link: "https://www.trattoriazaza.it/",
+        },
+        {
+          name: "Uffizi-galleriet",
+          coords: [43.7685, 11.255],
+          category: "sight",
+          description:
+            "Verdenskjent kunstmuseum med verker av Michelangelo, Botticelli og da Vinci.",
+          link: "https://www.uffizi.it/en/the-uffizi",
+        },
+        {
+          name: "Il Duomo di Firenze",
+          coords: [43.7731, 11.256],
+          category: "sight",
+          description:
+            "Katedral med ikonisk kuppel av Brunelleschi og rik historie.",
+          link: "https://duomo.firenze.it/en/home",
+        },
+        {
+          name: "Matlagingskurs – lokal mat på gård",
+          coords: [43.8285, 10.8902],
+          category: "activity",
+          description: "Lag autentisk toskansk mat med lokale råvarer.",
+          link: "https://www.tripadvisor.com/AttractionProductReview-g635877-d27795468",
+        },
+        {
+          name: "Golf Club Bellosguardo Vinci",
+          coords: [43.7877, 10.9185],
+          category: "golf",
+          description:
+            "Vakker 9-hulls golfbane med utsikt over det toskanske landskapet.",
+          link: "https://www.golfbellosguardovinci.it/",
+        },
+        {
+          name: "Villa Rospigliosi",
+          coords: [43.8325, 10.9],
+          category: "sight",
+          description:
+            "Historisk villa fra 1600-tallet med arkitektonisk verdi.",
+          link: "https://www.villarospigliosi.it/",
+        },
+        {
+          name: "Montecatini Golf",
+          coords: [43.8977, 10.7827],
+          category: "golf",
+          description: "18-hulls bane med vakker utsikt.",
+          link: "https://www.montecatinigolf.com/",
+        },
+        {
+          name: "Le Pavoniere Golf & Country Club",
+          coords: [43.8322, 11.0029],
+          category: "golf",
+          description:
+            "Designet av Arnold Palmer, kjent for sitt utfordrende oppsett.",
+          link: "https://www.pavoniere.it/",
+        },
+        {
+          name: "Vinci",
+          coords: [43.7767, 10.9236],
+          category: "city",
+          description:
+            "Leonardo da Vincis fødeby, med museum og vakker utsikt.",
+          link: "https://www.museoleonardiano.it/",
+        },
+        {
+          name: "Monsummano Terme",
+          coords: [43.8662, 10.8125],
+          category: "city",
+          description:
+            "Kjent for Grotta Giusti, en termal grotte som Giuseppe Verdi kalte 'den åttende verdensunder'.",
+          link: "https://www.grottagiustispa.com/",
+        },
+        {
+          name: "Chiesa di San Giorgio",
+          coords: [43.82, 10.8833],
+          category: "sight",
+          description:
+            "En vakker kirke i Lamporecchio med historiske fresker og arkitektur.",
+          link: "https://it.wikipedia.org/wiki/Chiesa_di_San_Giorgio_(Lamporecchio)",
+        },
+        {
+          name: "Chiesa Santi Baronto e Desiderio",
+          coords: [43.8541, 10.8832],
+          category: "sight",
+          description:
+            "En middelaldersk kirke kjent for sine religiøse kunstverk.",
+          link: "https://www.lamporecchio.it/cultura/chiesa-santi-baronto-e-desiderio",
+        },
+        {
+          name: "Lamporecchio Trekking",
+          coords: [43.82, 10.89],
+          category: "activity",
+          description:
+            "Turforslag for å utforske Lamporecchios vakre naturområder til fots.",
+          link: "https://www.turismotoscana.it/en/ideas/trekking-in-lamporecchio",
+        },
+        {
+          name: "Galleria dell'Accademia",
+          coords: [43.7769, 11.2583],
+          category: "sight",
+          description:
+            "Berømt kunstgalleri i Firenze, hjem til Michelangelos David.",
+          link: "https://www.galleriaaccademiafirenze.it/en/",
+        },
+        {
+          name: "Ponte Vecchio",
+          coords: [43.7687, 11.2531],
+          category: "sight",
+          description:
+            "Historisk bro over elven Arno, kjent for sine butikker og vakker utsikt.",
+          link: "https://www.visitflorence.com/florence-monuments/ponte-vecchio.html",
+        },
+        {
+          name: "Piazzale Michelangelo",
+          coords: [43.7629, 11.2656],
+          category: "sight",
+          description:
+            "Utsiktspunkt med panoramautsikt over Firenze og Arno-dalen.",
+          link: "https://www.visitflorence.com/florence-monuments/piazzale-michelangelo.html",
+        },
+        {
+          name: "Corridoio Vasariano",
+          coords: [43.7676, 11.2544],
+          category: "sight",
+          description:
+            "Hemmelig gangvei som forbinder Palazzo Vecchio med Palazzo Pitti.",
+          link: "https://www.uffizi.it/en/corridoio-vasariano",
+        },
+        {
+          name: "Museo Casa Giusti",
+          coords: [43.8288, 10.8978],
+          category: "sight",
+          description:
+            "Museet til den italienske dikteren Mario Giusti, omgitt av vakre hager.",
+          link: "https://www.museocasagiusti.it/",
+        },
+        {
+          name: "Padule di Fucecchio",
+          coords: [43.8167, 10.7833],
+          category: "sight",
+          description:
+            "Italias største våtmarksområde med rikt fugleliv og flotte turmuligheter.",
+          link: "https://www.paduledifucecchio.eu/en/",
+        },
+        {
+          name: "Palazzo Pitti",
+          coords: [43.7649, 11.2486],
+          category: "sight",
+          description: "Stor renessansepalass med flere museer og vakre hager.",
+          link: "https://www.palazzopitti.it/en",
+        },
+        {
+          name: "Boboli Gardens",
+          coords: [43.7631, 11.2502],
+          category: "sight",
+          description:
+            "Historiske italienske hager med skulpturer og fantastisk utsikt over Firenze.",
+          link: "https://www.uffizi.it/en/boboli-garden",
+        },
+        {
+          name: "Basilica di Santa Croce",
+          coords: [43.7681, 11.2626],
+          category: "sight",
+          description:
+            "Berømt kirke hvor kjente italienere som Michelangelo og Galileo er gravlagt.",
+          link: "https://www.santacroceopera.it/en/",
+        },
+        {
+          name: "Mercato Centrale",
+          coords: [43.7762, 11.2535],
+          category: "sight",
+          description:
+            "Pulserende matmarked med lokale råvarer og street food i Firenze.",
+          link: "https://www.mercatocentrale.it/en/",
+        },
+        {
+          name: "Trattoria Toscana da Bule",
+          coords: [43.8269, 10.8994],
+          category: "restaurant",
+          description:
+            "Koselig trattoria som serverer tradisjonell toskansk mat.",
+          link: "https://www.tripadvisor.com/Restaurant_Review-g635877-d1234567-Reviews-Trattoria_Toscana_da_Bule-Lamporecchio_Province_of_Pistoia_Tuscany.html",
+        },
+        {
+          name: "Ristorante il Rifugio",
+          coords: [43.8275, 10.8956],
+          category: "restaurant",
+          description:
+            "Familiedrevet restaurant kjent for lokale spesialiteter og hyggelig atmosfære.",
+          link: "https://www.ristoranteilrifugio.it/",
+        },
+        {
+          name: "La Dispensa",
+          coords: [43.832, 10.8999],
+          category: "restaurant",
+          description:
+            "Moderne restaurant med fokus på ferske, lokale råvarer.",
+          link: "https://www.ladispensa.it/",
+        },
+        {
+          name: "Pizzeria Da Vito",
+          coords: [43.8297, 10.9011],
+          category: "restaurant",
+          description: "Populær pizzeria med ekte italiensk atmosfære.",
+          link: "https://www.facebook.com/pizzeriadavito",
+        },
+        {
+          name: "Bar Pasticceria Stefanelli",
+          coords: [43.8284, 10.903],
+          category: "restaurant",
+          description:
+            "Kaffebar og konditori med deilige søtsaker og lokale bakevarer.",
+          link: "https://www.pasticceriastefanelli.it/",
+        },
+        {
+          name: "La Ménagère",
+          coords: [43.7746, 11.2553],
+          category: "restaurant",
+          description:
+            "Trendy sted i Firenze som kombinerer kafé, blomsterbutikk og restaurant.",
+          link: "https://www.lamenagere.it/",
+        },
+        {
+          name: "Trattoria Mario",
+          coords: [43.7762, 11.2526],
+          category: "restaurant",
+          description:
+            "Autentisk og livlig trattoria, kjent for toskanske spesialiteter.",
+          link: "https://www.trattoriamario.com/",
+        },
+        {
+          name: "Osteria Santo Spirito",
+          coords: [43.7652, 11.2522],
+          category: "restaurant",
+          description:
+            "Tradisjonell osteria i hjertet av Firenze med sjarmerende atmosfære.",
+          link: "https://www.osteriasantospirito.com/",
+        },
+        {
+          name: "Gelateria dei Neri",
+          coords: [43.7689, 11.2604],
+          category: "restaurant",
+          description:
+            "Populært iskremsted kjent for sine kremete og naturlige smaker.",
+          link: "https://www.gelateriadeineri.com/",
+        },
+      ];
+
+      // Hent status fra localStorage eller lag tomt objekt
+      const visitedStatus =
+        JSON.parse(localStorage.getItem("visitedStatus")) || {};
+
+      function saveVisitedStatus() {
+        localStorage.setItem("visitedStatus", JSON.stringify(visitedStatus));
+      }
+
+      const { createClient } = window.supabase;
+      const supabaseUrl = "https://jnqocfclduaagwxsixjs.supabase.co";
+      const supabaseKey =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpucW9jZmNsZHVhYWd3eHNpeGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NTkzMjksImV4cCI6MjA2NDUzNTMyOX0.Jr5dDwe6wGZXKhZ7iW1t9DsVVR4NqFr4MrUWY78zHd0";
+      let supabase;
+
+      async function saveVisitedStatusToDatabase(index, is_checked) {
+        if (!supabase) {
+          supabase = createClient(supabaseUrl, supabaseKey);
+        }
+
+        const { data, error } = await supabase
+          .from("checkin")
+          .upsert([{ index, is_checked }], { onConflict: ["index"] });
+
+        if (error) {
+          console.error("Supabase error:", error);
+        }
+      }
+
+      // Hent besøksstatus fra Supabase ved lasting av siden
+      window.addEventListener("DOMContentLoaded", async () => {
+        if (!supabase) {
+          supabase = createClient(supabaseUrl, supabaseKey);
+        }
+        const { data, error } = await supabase.from("checkin").select();
+        if (error) {
+          console.error("Supabase fetch error:", error);
+          return;
+        }
+        if (Array.isArray(data)) {
+          data.forEach((row) => {
+            visitedStatus[row.index] = !!row.is_checked;
+          });
+          localStorage.setItem("visitedStatus", JSON.stringify(visitedStatus));
+        }
+      });
+
+      function toggleVisited(index) {
+        const loc = locations[index];
+        loc.visited = !loc.visited;
+        visitedStatus[index] = loc.visited;
+        saveVisitedStatus();
+        saveVisitedStatusToDatabase(index, loc.visited);
+
+        const newIcon = loc.visited
+          ? visitedIcons[loc.category]
+          : icons[loc.category];
+        loc.marker.setIcon(newIcon);
+        updatePopupContent(index, loc.visited);
+      }
+
+      function updatePopupContent(index) {
+        const loc = locations[index];
+        const btnText = loc.visited
+          ? "❌ Unmark visited"
+          : "✅ Mark as visited";
+        const popupContent = `
+      <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
+      <i>${loc.description}</i><br>
+      <a href="${loc.link}" target="_blank">Les mer</a><br>
+      <button onclick="toggleVisited(${index})">${btnText}</button>
+    `;
+
+        if (!loc.marker.getPopup()) {
+          loc.marker.bindPopup(popupContent);
+        } else {
+          loc.marker.getPopup().setContent(popupContent);
+        }
+        loc.marker.openPopup();
+      }
+
+      locations.forEach((loc, index) => {
+        loc.visited = !!visitedStatus[index];
+        const iconToUse = loc.visited
+          ? visitedIcons[loc.category]
+          : icons[loc.category];
+        const marker = L.marker(loc.coords, { icon: iconToUse }).addTo(map);
+        loc.marker = marker;
+
+        const btnText = loc.visited
+          ? "❌ Unmark visited"
+          : "✅ Mark as visited";
+        const popupContent = `
+      <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
+      <i>${loc.description}</i><br>
+      <a href="${loc.link}" target="_blank">Les mer</a><br>
+      <button onclick="toggleVisited(${index})">${btnText}</button>
+    `;
+        marker.bindPopup(popupContent);
+      });
+
+      const legend = L.control({ position: "bottomright" });
+      legend.onAdd = function (map) {
+        const div = L.DomUtil.create("div", "legend");
+        div.innerHTML = "<strong>Forklaring</strong><br>";
+        for (const [cat, color] of Object.entries(categoryColors)) {
+          const label = {
+            restaurant: "Restaurant",
+            sight: "Severdighet",
+            stay: "Overnatting",
+            activity: "Aktivitet",
+            golf: "Golf",
+            city: "By",
+          }[cat];
+          div.innerHTML += `<div><span style="background:${color}"></span>${label}</div>`;
+        }
+        return div;
+      };
+      legend.addTo(map);
+    </script>
+  </body>
+</html>
