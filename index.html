@@ -448,11 +448,11 @@
           ? "❌ Unmark visited"
           : "✅ Mark as visited";
         const popupContent = `
-        <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
-        <i>${loc.description}</i><br>
-        <a href="${loc.link}" target="_blank">Les mer</a><br>
-        <button onclick="toggleVisited(${index})">${btnText}</button>
-      `;
+      <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
+      <i>${loc.description}</i><br>
+      <a href="${loc.link}" target="_blank">Les mer</a><br>
+      <button onclick="toggleVisited(${index})">${btnText}</button>
+    `;
 
         if (!loc.marker.getPopup()) {
           loc.marker.bindPopup(popupContent);
@@ -474,11 +474,11 @@
           ? "❌ Unmark visited"
           : "✅ Mark as visited";
         const popupContent = `
-        <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
-        <i>${loc.description}</i><br>
-        <a href="${loc.link}" target="_blank">Les mer</a><br>
-        <button onclick="toggleVisited(${index})">${btnText}</button>
-      `;
+      <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
+      <i>${loc.description}</i><br>
+      <a href="${loc.link}" target="_blank">Les mer</a><br>
+      <button onclick="toggleVisited(${index})">${btnText}</button>
+    `;
         marker.bindPopup(popupContent);
       });
 
