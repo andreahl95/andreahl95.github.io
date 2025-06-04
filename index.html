@@ -411,7 +411,6 @@
           return _visitedStatus;
         }
       }
-
       // Hent status fra localStorage eller lag tomt objekt
       const visitedStatus = await getVisitedStatus();
 
@@ -441,7 +440,7 @@
         loc.marker.setIcon(newIcon);
         updatePopupContent(index, loc.visited);
       }
-
+      window.toggleVisited = toggleVisited;
       function updatePopupContent(index) {
         const loc = locations[index];
         const btnText = loc.visited
