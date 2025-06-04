@@ -460,6 +460,75 @@
         }
         loc.marker.openPopup();
       }
+        function getSavedFilterState() {
+  const saved = localStorage.getItem('categoryFilters');
+  return saved ? JSON.parse(saved) : Object.keys(categoryColors);
+}
+
+function saveFilterState(selectedCategories) {
+  localStorage.setItem('categoryFilters', JSON.stringify(selectedCategories));
+}
+
+function updateMarkersVisibility() {
+  const checkedCategories = Array.from(document.querySelectorAll('.category-filter:checked')).map(
+    (input) => input.value
+  );
+  saveFilterState(checkedCategories);
+  locations.forEach((loc) => {
+    if (!loc.marker) return;
+    if (checkedCategories.includes(loc.category)) {
+      if (!map.hasLayer(loc.marker)) map.addLayer(loc.marker);
+    } else {
+      if (map.hasLayer(loc.marker)) map.removeLayer(loc.marker);
+    }
+  });
+}
+
+// Create filter controls
+const filterContainer = L.control({ position: 'topright' });
+filterContainer.onAdd = function () {
+  const div = L.DomUtil.create('div', 'legend');
+  div.innerHTML = '<strong>Filtrer etter kategori</strong><br>';
+  const savedFilters = getSavedFilterState();
+  for (const cat of Object.keys(categoryColors)) {
+    const label = {
+      restaurant: "Restaurant",
+      sight: "Severdighet",
+      stay: "Overnatting",
+      activity: "Aktivitet",
+      golf: "Golf",
+      city: "By"
+    }[cat];
+    const checked = savedFilters.includes(cat) ? 'checked' : '';
+    div.innerHTML += `
+      <label><input type="checkbox" class="category-filter" value="${cat}" ${checked}> ${label}</label><br>
+    `;
+  }
+  div.innerHTML += `<br><button id="resetFilters">🔄 Tilbakestill</button>`;
+  return div;
+};
+filterContainer.addTo(map);
+
+// Update visibility after map and controls are fully ready
+setTimeout(() => {
+  updateMarkersVisibility();
+}, 500);
+
+document.addEventListener('change', (e) => {
+  if (e.target.classList.contains('category-filter')) {
+    updateMarkersVisibility();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'resetFilters') {
+    document.querySelectorAll('.category-filter').forEach((checkbox) => {
+      checkbox.checked = true;
+    });
+    updateMarkersVisibility();
+  }
+});
+
 
       locations.forEach((loc, index) => {
         loc.visited = !!visitedStatus[index];
