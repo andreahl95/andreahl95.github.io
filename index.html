@@ -8,10 +8,27 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
+        <meta name="theme-color" content="#007AFF" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.legend-toggle').forEach(button => {
+      button.addEventListener('click', () => {
+        const section = button.nextElementSibling;
+        if (section.style.display === 'none') {
+          section.style.display = 'block';
+        } else {
+          section.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
     <style>
       html,
       body,
@@ -41,6 +58,19 @@
         padding: 4px 8px;
         font-size: 13px;
         cursor: pointer;
+      }
+       .legend-toggle {
+        background: #007aff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .legend-section {
+        display: none;
       }
     </style>
   </head>
@@ -484,13 +514,11 @@ function updateMarkersVisibility() {
   });
 }
 
-// Create filter controls
 const filterContainer = L.control({ position: 'topright' });
 filterContainer.onAdd = function () {
-  const div = L.DomUtil.create('div', 'legend');
-  div.innerHTML = '<strong>Filtrer etter kategori</strong><br>';
+  const wrapper = L.DomUtil.create('div', 'legend');
   const savedFilters = getSavedFilterState();
-  for (const cat of Object.keys(categoryColors)) {
+  const filtersHTML = Object.entries(categoryColors).map(([cat, color]) => {
     const label = {
       restaurant: "Restaurant",
       sight: "Severdighet",
@@ -500,14 +528,67 @@ filterContainer.onAdd = function () {
       city: "By"
     }[cat];
     const checked = savedFilters.includes(cat) ? 'checked' : '';
-    div.innerHTML += `
-      <label><input type="checkbox" class="category-filter" value="${cat}" ${checked}> ${label}</label><br>
-    `;
-  }
-  div.innerHTML += `<br><button id="resetFilters">🔄 Tilbakestill</button>`;
-  return div;
+    return `<label><input type="checkbox" class="category-filter" value="${cat}" ${checked}> ${label}</label><br>`;
+  }).join('');
+
+  wrapper.innerHTML = `
+    <button class="legend-toggle">▶ Filtrer etter kategori</button>
+    <div class="legend-section">
+      <strong>Filtrer etter kategori</strong><br>
+      ${filtersHTML}
+      <br><button id="resetFilters">🔄 Tilbakestill</button>
+    </div>
+  `;
+
+  return wrapper;
 };
 filterContainer.addTo(map);
+
+// Legend section
+const legend = L.control({ position: "bottomright" });
+legend.onAdd = function () {
+  const wrapper = L.DomUtil.create("div", "legend");
+  wrapper.innerHTML = `
+    <button class="legend-toggle">▶ Forklaring</button>
+    <div class="legend-section">
+      <strong>Forklaring</strong><br>
+      ${Object.entries(categoryColors).map(([cat, color]) => {
+        const label = {
+          restaurant: "Restaurant",
+          sight: "Severdighet",
+          stay: "Overnatting",
+          activity: "Aktivitet",
+          golf: "Golf",
+          city: "By"
+        }[cat];
+        return `<div><span style="background:${color}"></span>${label}</div>`;
+      }).join('')}
+    </div>
+  `;
+  return wrapper;
+};
+legend.addTo(map);
+
+// Enable toggles after controls are added
+setTimeout(() => {
+  document.querySelectorAll('.legend-toggle').forEach(button => {
+    const section = button.nextElementSibling;
+    section.style.display = 'none'; // Hide section by default
+
+    // Ensure initial icon is ▶
+    if (!button.textContent.includes('▶')) {
+      button.textContent = '▶ ' + button.textContent.replace(/^▼|▶/, '').trim();
+    }
+
+    button.addEventListener('click', () => {
+      const isVisible = section.style.display === 'block';
+      section.style.display = isVisible ? 'none' : 'block';
+      button.textContent = isVisible
+        ? '▶ ' + button.textContent.replace(/^▼|▶/, '').trim()
+        : '▼ ' + button.textContent.replace(/^▼|▶/, '').trim();
+    });
+  });
+}, 600);
 
 // Update visibility after map and controls are fully ready
 setTimeout(() => {
@@ -528,8 +609,6 @@ document.addEventListener('click', (e) => {
     updateMarkersVisibility();
   }
 });
-
-
       locations.forEach((loc, index) => {
         loc.visited = !!visitedStatus[index];
         const iconToUse = loc.visited
@@ -549,25 +628,6 @@ document.addEventListener('click', (e) => {
     `;
         marker.bindPopup(popupContent);
       });
-
-      const legend = L.control({ position: "bottomright" });
-      legend.onAdd = function (map) {
-        const div = L.DomUtil.create("div", "legend");
-        div.innerHTML = "<strong>Forklaring</strong><br>";
-        for (const [cat, color] of Object.entries(categoryColors)) {
-          const label = {
-            restaurant: "Restaurant",
-            sight: "Severdighet",
-            stay: "Overnatting",
-            activity: "Aktivitet",
-            golf: "Golf",
-            city: "By",
-          }[cat];
-          div.innerHTML += `<div><span style="background:${color}"></span>${label}</div>`;
-        }
-        return div;
-      };
-      legend.addTo(map);
     </script>
   </body>
 </html>
