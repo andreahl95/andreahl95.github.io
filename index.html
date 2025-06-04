@@ -44,7 +44,7 @@
   </head>
   <body>
     <div id="map"></div>
-    <script>
+    <script type="module">
       const standard = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -210,7 +210,7 @@
           coords: [43.722960, 10.396361],
           category: "sight",
           description:
-            'En vakker kirke i Lamporecchio med historiske fresker og arkitektur.<br><a href="https://maps.app.goo.gl/oNkxx67HRF6ruAWU8" target="_blank">Åpne i Google Maps</a>',
+            'Trenger ingen beskrivelse.<br><a href="https://maps.app.goo.gl/oNkxx67HRF6ruAWU8" target="_blank">Åpne i Google Maps</a>',
           link: "https://www.opapisa.it/en/square-of-miracles/tower/",
         },
         {
@@ -383,19 +383,35 @@
         },
       ];
 
-      // Hent status fra localStorage eller lag tomt objekt
-      const visitedStatus =
-        JSON.parse(localStorage.getItem("visitedStatus")) || {};
-
-      function saveVisitedStatus() {
-        localStorage.setItem("visitedStatus", JSON.stringify(visitedStatus));
-      }
-
       const { createClient } = window.supabase;
       const supabaseUrl = "https://jnqocfclduaagwxsixjs.supabase.co";
       const supabaseKey =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpucW9jZmNsZHVhYWd3eHNpeGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NTkzMjksImV4cCI6MjA2NDUzNTMyOX0.Jr5dDwe6wGZXKhZ7iW1t9DsVVR4NqFr4MrUWY78zHd0";
       let supabase;
+
+      // Hent besøksstatus fra Supabase ved lasting av siden
+      async function getVisitedStatus() {
+        if (!supabase) {
+          supabase = createClient(supabaseUrl, supabaseKey);
+        }
+        const { data, error } = await supabase.from("checkin").select();
+        if (error) {
+          console.error("Supabase fetch error:", error);
+          return;
+        }
+
+        const _visitedStatus = {};
+
+        if (Array.isArray(data)) {
+          data.forEach((row) => {
+            _visitedStatus[row.index] = !!row.is_checked;
+          });
+          return _visitedStatus;
+        }
+      }
+
+      // Hent status fra localStorage eller lag tomt objekt
+      const visitedStatus = await getVisitedStatus();
 
       async function saveVisitedStatusToDatabase(index, is_checked) {
         if (!supabase) {
@@ -411,29 +427,10 @@
         }
       }
 
-      // Hent besøksstatus fra Supabase ved lasting av siden
-      window.addEventListener("DOMContentLoaded", async () => {
-        if (!supabase) {
-          supabase = createClient(supabaseUrl, supabaseKey);
-        }
-        const { data, error } = await supabase.from("checkin").select();
-        if (error) {
-          console.error("Supabase fetch error:", error);
-          return;
-        }
-        if (Array.isArray(data)) {
-          data.forEach((row) => {
-            visitedStatus[row.index] = !!row.is_checked;
-          });
-          localStorage.setItem("visitedStatus", JSON.stringify(visitedStatus));
-        }
-      });
-
       function toggleVisited(index) {
         const loc = locations[index];
         loc.visited = !loc.visited;
         visitedStatus[index] = loc.visited;
-        saveVisitedStatus();
         saveVisitedStatusToDatabase(index, loc.visited);
 
         const newIcon = loc.visited
@@ -449,11 +446,11 @@
           ? "❌ Unmark visited"
           : "✅ Mark as visited";
         const popupContent = `
-      <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
-      <i>${loc.description}</i><br>
-      <a href="${loc.link}" target="_blank">Les mer</a><br>
-      <button onclick="toggleVisited(${index})">${btnText}</button>
-    `;
+        <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
+        <i>${loc.description}</i><br>
+        <a href="${loc.link}" target="_blank">Les mer</a><br>
+        <button onclick="toggleVisited(${index})">${btnText}</button>
+      `;
 
         if (!loc.marker.getPopup()) {
           loc.marker.bindPopup(popupContent);
@@ -475,11 +472,11 @@
           ? "❌ Unmark visited"
           : "✅ Mark as visited";
         const popupContent = `
-      <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
-      <i>${loc.description}</i><br>
-      <a href="${loc.link}" target="_blank">Les mer</a><br>
-      <button onclick="toggleVisited(${index})">${btnText}</button>
-    `;
+        <b style="color:${categoryColors[loc.category]}">${loc.name}</b><br>
+        <i>${loc.description}</i><br>
+        <a href="${loc.link}" target="_blank">Les mer</a><br>
+        <button onclick="toggleVisited(${index})">${btnText}</button>
+      `;
         marker.bindPopup(popupContent);
       });
 
